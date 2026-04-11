@@ -1,5 +1,6 @@
 ﻿using Gastos.Backend.Data;
 using Gastos.Backend.Dtos;
+using Gastos.Backend.Helpers;
 using Gastos.Backend.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -58,9 +59,12 @@ public class TransactionRepository
 
     public async Task<List<Transaction>> GetTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate)
     {
+        var start = startDate.ToUtc();
+        var end = endDate.ToUtc();
+
         return await _context.Transactions
             .Include(t => t.Category)
-            .Where(t => t.Date >= startDate && t.Date <= endDate)
+            .Where(t => t.Date >= start && t.Date <= end)
             .OrderByDescending(t => t.Date)
             .ToListAsync();
     }
@@ -78,7 +82,7 @@ public class TransactionRepository
             Type = type,
             CategoryId = category.Id,
             Description = description,
-            Date = date ?? DateTime.UtcNow
+            Date = date?.ToUtc() ?? DateTime.UtcNow
         };
 
         _context.Transactions.Add(transaction);
@@ -98,7 +102,11 @@ public class TransactionRepository
         transaction.Type = type;
         transaction.CategoryId = categoryId;
         transaction.Description = description;
-        if (date.HasValue) transaction.Date = date.Value;
+
+        if (date.HasValue)
+        {
+            transaction.Date = date.Value.ToUtc();
+        }
 
         _context.Transactions.Update(transaction);
         return await _context.SaveChangesAsync() > 0;
@@ -118,12 +126,13 @@ public class TransactionRepository
     DateTime endDate,
     CancellationToken ct = default)
     {
-        var endOfPeriod = endDate.Date.AddDays(1).AddTicks(-1);
+        var start = startDate.ToUtc();
+        var endOfPeriod = endDate.ToUtc().AddDays(1).AddTicks(-1);
 
         var categoryData = await _context.Transactions
             .Include(t => t.Category)
             .Where(t => t.Type == TransactionType.Expense &&
-                        t.Date >= startDate.Date &&
+                        t.Date >= start &&
                         t.Date <= endOfPeriod)
             .GroupBy(t => t.Category.Name)
             .Select(g => new
@@ -209,9 +218,30 @@ public class TransactionRepository
         return categoryName.ToLower() switch
         {
             "comida" => "#FF6384",
-            "transporte" => "#36A2EB",
-            "ocio" => "#FFCE56",
+            "comidafuera" => "#FF9AA2",
+            "comidadomicilio" => "#FFB7B2",
+
+            "gasolina" => "#36A2EB",
+            "transporte" => "#4D96FF",
+
+            "ropa" => "#8AC926",
+            "regalos" => "#C77DFF",
+
             "alquiler" => "#4BC0C0",
+            "gastoshogar" => "#2EC4B6",
+            "telefono" => "#5E60CE",
+
+            "salud/ejercicio" => "#FF595E",
+
+            "dineroprestado" => "#6A4C93",
+            "inversion" => "#1982C4",
+            "educacion" => "#FF9F40",
+
+            "nomina" => "#2ECC71",   
+            "familia" => "#52B788",   
+
+            "otros" => "#ADB5BD",
+
             _ => "#C9CBCF"
         };
     }

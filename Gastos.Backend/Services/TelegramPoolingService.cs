@@ -1,5 +1,6 @@
 ﻿using Gastos.Backend.Models;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -14,12 +15,21 @@ namespace Gastos.Backend.Services
         private readonly ITelegramBotClient _botClient;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IMemoryCache _cache;
+        private readonly IConfiguration _configuration;
+        private long? _allowedUserId;
 
-        public TelegramPoolingService(ITelegramBotClient botClient, IServiceScopeFactory scopeFactory, IMemoryCache cache)
+        public TelegramPoolingService(ITelegramBotClient botClient, IServiceScopeFactory scopeFactory, IMemoryCache cache, IConfiguration configuration)
         {
             _botClient = botClient;
             _scopeFactory = scopeFactory;
             _cache = cache;
+            _configuration = configuration;
+
+            // Leer el ID de usuario permitido desde configuración
+            if (long.TryParse(_configuration["telegram:allowed_user_id"], out long userId))
+            {
+                _allowedUserId = userId;
+            }
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -43,6 +53,35 @@ namespace Gastos.Backend.Services
 
         private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
+            // Obtener el ID del usuario de cualquier tipo de update
+            long? userId = null;
+
+            if (update.Type == UpdateType.CallbackQuery && update.CallbackQuery?.From != null)
+            {
+                userId = update.CallbackQuery.From.Id;
+            }
+            else if (update.Message?.From != null)
+            {
+                userId = update.Message.From.Id;
+            }
+
+            // Validar que el usuario está autorizado
+            if (!IsUserAuthorized(userId))
+            {
+                if (userId.HasValue)
+                {
+                    var chatId = update.Message?.Chat.Id ?? update.CallbackQuery?.Message?.Chat.Id;
+                    if (chatId.HasValue)
+                    {
+                        await botClient.SendTextMessageAsync(
+                            chatId.Value,
+                            "❌ No tienes permiso para usar este bot.",
+                            cancellationToken: ct);
+                    }
+                }
+                return;
+            }
+
             if (update.Type == UpdateType.CallbackQuery && update.CallbackQuery != null)
             {
                 await HandleCallbackAsync(botClient, update.CallbackQuery, ct);
@@ -180,6 +219,34 @@ namespace Gastos.Backend.Services
         {
             Console.WriteLine($"Error de Telegram: {exception.Message}");
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Valida si un usuario está autorizado para usar el bot
+        /// </summary>
+        private bool IsUserAuthorized(long? userId)
+        {
+            // Si no se configuró un ID permitido, permitir todos
+            if (!_allowedUserId.HasValue)
+            {
+                Console.WriteLine("⚠️  ADVERTENCIA: No hay telegram:allowed_user_id configurado. El bot es accesible para cualquier usuario.");
+                return true;
+            }
+
+            // Validar que el usuario sea el autorizado
+            if (!userId.HasValue)
+            {
+                return false;
+            }
+
+            bool isAuthorized = userId == _allowedUserId;
+
+            if (!isAuthorized)
+            {
+                Console.WriteLine($"❌ Acceso denegado para usuario ID: {userId}. Solo permitido: {_allowedUserId}");
+            }
+
+            return isAuthorized;
         }
     }
 }

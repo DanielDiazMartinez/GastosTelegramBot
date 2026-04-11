@@ -9,7 +9,6 @@ export const useTransactions = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Carga inicial de datos
   const loadData = async () => {
     setLoading(true);
     try {
