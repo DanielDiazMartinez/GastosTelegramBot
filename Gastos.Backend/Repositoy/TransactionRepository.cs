@@ -121,6 +121,7 @@ public class TransactionRepository
         var endOfPeriod = endDate.Date.AddDays(1).AddTicks(-1);
 
         var categoryData = await _context.Transactions
+            .Include(t => t.Category)
             .Where(t => t.Type == TransactionType.Expense &&
                         t.Date >= startDate.Date &&
                         t.Date <= endOfPeriod)

@@ -8,6 +8,7 @@ export const TransactionsPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   const hasInvalidRange = !!startDate && !!endDate && startDate > endDate;
 
@@ -17,7 +18,8 @@ export const TransactionsPage = () => {
     const transactionDate = new Date(t.date).toISOString().split('T')[0];
     const matchesStart = !startDate || transactionDate >= startDate;
     const matchesEnd = !endDate || transactionDate <= endDate;
-    return matchesStart && matchesEnd;
+    const matchesCategory = !selectedCategory || t.categoryId === parseInt(selectedCategory);
+    return matchesStart && matchesEnd && matchesCategory;
   });
 
   const handleCreate = async (formData: any) => {
@@ -63,14 +65,30 @@ export const TransactionsPage = () => {
               className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todas las categorías</option>
+              {categories.map((cat: any) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <button
             onClick={() => {
               setStartDate('');
               setEndDate('');
+              setSelectedCategory('');
             }}
             className="md:self-end bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition"
           >
-            Limpiar filtro
+            Limpiar filtros
           </button>
         </div>
         {hasInvalidRange && (
