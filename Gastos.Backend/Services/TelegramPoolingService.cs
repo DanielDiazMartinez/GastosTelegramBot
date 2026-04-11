@@ -70,11 +70,11 @@ namespace Gastos.Backend.Services
             {
                 if (userId.HasValue)
                 {
-                    var chatId = update.Message?.Chat.Id ?? update.CallbackQuery?.Message?.Chat.Id;
-                    if (chatId.HasValue)
+                    var unauthorizedChatId = update.Message?.Chat.Id ?? update.CallbackQuery?.Message?.Chat.Id;
+                    if (unauthorizedChatId.HasValue)
                     {
                         await botClient.SendTextMessageAsync(
-                            chatId.Value,
+                            unauthorizedChatId.Value,
                             "❌ No tienes permiso para usar este bot.",
                             cancellationToken: ct);
                     }

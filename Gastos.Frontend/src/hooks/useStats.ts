@@ -21,7 +21,6 @@ const stats = res.data;
 if (!isFullYear) {
   setMonthData(stats);
   
-  // Usamos Number() y verificamos ambas posibilidades de nombre (type/Type)
   const totalGastos = stats
     .filter((s: any) => Number(s.type ?? s.Type) === 0)
     .reduce((acc: number, curr: any) => acc + (curr.totalAmount ?? curr.TotalAmount ?? 0), 0);
@@ -30,10 +29,10 @@ if (!isFullYear) {
     .filter((s: any) => Number(s.type ?? s.Type) === 1)
     .reduce((acc: number, curr: any) => acc + (curr.totalAmount ?? curr.TotalAmount ?? 0), 0);
 
-  console.log("Totales calculados:", { totalIngresos, totalGastos }); // Esto te dirá en la consola si hay datos
+  console.log("Totales calculados:", { totalIngresos, totalGastos });
 
   setComparisonData([{
-    name: startDate.substring(0, 7), // Ejemplo: "2026-04"
+    name: startDate.substring(0, 7),
     ingresos: totalIngresos,
     gastos: totalGastos
   }]);
