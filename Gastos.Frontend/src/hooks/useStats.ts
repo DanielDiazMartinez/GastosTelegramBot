@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import axios from 'axios';
+import { API_STATS_URL } from '../config/api';
 
-const API_URL = 'http://localhost:8080/api/Stats';
+const API_URL = API_STATS_URL;
 
 export const useStats = () => {
   const [yearData, setYearData] = useState([]);

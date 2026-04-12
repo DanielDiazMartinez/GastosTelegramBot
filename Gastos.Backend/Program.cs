@@ -21,6 +21,27 @@ var dbPass = builder.Configuration[$"{section}:password"];
 
 var connectionString = $"Host={dbHost};Port=5432;Database={dbName};Username={dbUser};Password={dbPass};";
 
+var configuredCorsOrigins = builder.Configuration["FRONTEND_CORS_ORIGINS"]
+    ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+var serverIp = builder.Configuration["SERVER_IP"];
+var fallbackCorsOrigins = new List<string>
+{
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+};
+
+if (!string.IsNullOrWhiteSpace(serverIp))
+{
+    fallbackCorsOrigins.Add($"http://{serverIp}:5173");
+}
+
+var allowedCorsOrigins = (configuredCorsOrigins is { Length: > 0 }
+    ? configuredCorsOrigins
+    : fallbackCorsOrigins.ToArray())
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
@@ -36,7 +57,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(FrontendCorsPolicy, policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+            .WithOrigins(allowedCorsOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });

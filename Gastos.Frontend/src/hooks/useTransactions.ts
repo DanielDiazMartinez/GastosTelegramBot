@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_STATS_URL, API_TRANSACTION_URL } from '../config/api';
 
-const API_URL = 'http://localhost:8080/api/Transaction';
-const STATS_URL = 'http://localhost:8080/api/Stats';
+const API_URL = API_TRANSACTION_URL;
+const STATS_URL = API_STATS_URL;
 
 export const useTransactions = () => {
   const [transactions, setTransactions] = useState([]);
