@@ -6,6 +6,9 @@ WORKDIR /app
 
 COPY package*.json ./
 
+RUN mkdir -p /app/.npm-cache
+ENV npm_config_cache=/app/.npm-cache
+ENV TMPDIR=/app/.npm-cache
 
 RUN npm install
 
