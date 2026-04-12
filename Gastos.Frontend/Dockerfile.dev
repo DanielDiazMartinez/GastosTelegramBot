@@ -1,22 +1,14 @@
 FROM node:20-alpine
-
-
 WORKDIR /app
-
-
 COPY package*.json ./
 
+RUN npm cache clean --force
 RUN mkdir -p /app/.npm-cache
 ENV npm_config_cache=/app/.npm-cache
 ENV TMPDIR=/app/.npm-cache
 
-RUN npm install
-
+RUN npm install --no-audit --no-fund
 
 COPY . .
-
-
 EXPOSE 5173
-
-
 CMD ["npm", "run", "dev", "--", "--host"]
