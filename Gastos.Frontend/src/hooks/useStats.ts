@@ -9,6 +9,7 @@ export const useStats = () => {
   const [monthData, setMonthData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [comparisonData, setComparisonData] = useState<{name: string, ingresos: number, gastos: number}[]>([]);
+  const [annualSummary, setAnnualSummary] = useState<{ savingsRate: number }>({ savingsRate: 0 });
 
   const fetchStats = async (startDate: string, endDate: string, isFullYear: boolean) => {
     setLoading(true);
@@ -22,9 +23,14 @@ export const useStats = () => {
       if (isFullYear) {
         setYearData(stats);
         const year = Number(startDate.substring(0, 4));
-        const balanceRes = await axios.get(`${API_URL}/income-expense-balance/yearly`, {
-          params: { year }
-        });
+        const [balanceRes, summaryRes] = await Promise.all([
+          axios.get(`${API_URL}/income-expense-balance/yearly`, {
+            params: { year }
+          }),
+          axios.get(`${API_URL}/summary/yearly`, {
+            params: { year }
+          })
+        ]);
 
         const yearlyBalance = Array.isArray(balanceRes.data) ? balanceRes.data : [];
         setComparisonData(
@@ -34,6 +40,9 @@ export const useStats = () => {
             gastos: Number(item.gastos ?? 0)
           }))
         );
+        setAnnualSummary({
+          savingsRate: Number(summaryRes.data?.savingsRate ?? 0)
+        });
       } else {
         setMonthData(stats);
       }
@@ -48,6 +57,7 @@ export const useStats = () => {
     yearData, 
     monthData, 
     comparisonData, 
+    annualSummary,
     loading, 
     fetchStats 
   };

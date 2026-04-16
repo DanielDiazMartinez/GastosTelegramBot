@@ -4,7 +4,7 @@ import { CategoryPieChart } from '../components/stats/CategoryPieChart';
 import { IncomeExpenseChart } from '../components/stats/IncomeExpenseChart';
 
 export const StatsPage = () => {
-  const { yearData, monthData, comparisonData, fetchStats } = useStats();
+  const { yearData, monthData, comparisonData, annualSummary, fetchStats } = useStats();
   
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const selectedYear = selectedMonth.substring(0, 4);
@@ -37,6 +37,13 @@ export const StatsPage = () => {
         <div className="mb-4">
           <h2 className="text-2xl font-black text-slate-800">Resumen Anual {selectedYear}</h2>
           <p className="text-slate-500">Distribución total de gastos este año</p>
+        </div>
+        <div className="mb-8 max-w-sm rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Tasa de ahorro</p>
+          <div className="mt-2 flex items-end gap-2">
+            <span className="text-4xl font-black text-emerald-600">{annualSummary.savingsRate.toFixed(2)}%</span>
+          </div>
+          <p className="mt-2 text-sm text-slate-500">Porcentaje de ingresos retenido durante el año seleccionado.</p>
         </div>
         <div className="space-y-8">
           <CategoryPieChart data={yearData} title="Gastos del Año" />

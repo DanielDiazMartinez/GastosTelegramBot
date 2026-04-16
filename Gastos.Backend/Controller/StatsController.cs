@@ -66,6 +66,30 @@ namespace Gastos.Backend.Controller
         }
 
         /// <summary>
+        /// Get yearly finance summary indicators
+        /// </summary>
+        [HttpGet("summary/yearly")]
+        [ProducesResponseType(typeof(FinanceSummaryDto), 200)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> GetYearlyFinanceSummary(
+            [FromQuery] int year,
+            CancellationToken ct = default)
+        {
+            if (year < 1900)
+                return BadRequest("Year must be valid");
+
+            try
+            {
+                var summary = await _repository.GetFinanceSummaryByYearAsync(year, ct);
+                return Ok(summary);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, "Request timeout");
+            }
+        }
+
+        /// <summary>
         /// Get categories by type (Expense or Income)
         /// </summary>
         [HttpGet("categories")]

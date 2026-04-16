@@ -194,6 +194,40 @@ public class TransactionRepository
             .ToList();
     }
 
+    public async Task<FinanceSummaryDto> GetFinanceSummaryByYearAsync(
+        int year,
+        CancellationToken ct = default)
+    {
+        var start = new DateTime(year, 1, 1).ToUtc();
+        var endOfYear = new DateTime(year, 12, 31).ToUtc().AddDays(1).AddTicks(-1);
+
+        var totals = await _context.Transactions
+            .Where(t => t.Date >= start && t.Date <= endOfYear)
+            .GroupBy(t => 1)
+            .Select(g => new
+            {
+                TotalIngresos = g.Where(t => t.Type == TransactionType.Income).Sum(t => t.Amount),
+                TotalGastos = g.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount),
+                TransactionsCount = g.Count()
+            })
+            .FirstOrDefaultAsync(ct);
+
+        var totalIngresos = totals?.TotalIngresos ?? 0;
+        var totalGastos = totals?.TotalGastos ?? 0;
+        var balanceTotal = totalIngresos - totalGastos;
+        var savingsRate = totalIngresos > 0
+            ? Math.Round((balanceTotal / totalIngresos) * 100, 2)
+            : 0;
+
+        return new FinanceSummaryDto
+        {
+            BalanceTotal = balanceTotal,
+            MonthlyBudgetUsage = 0,
+            SavingsRate = savingsRate,
+            TransactionsCount = totals?.TransactionsCount ?? 0
+        };
+    }
+
     public async Task<List<Category>> GetCategoriesByTypeAsync(TransactionType type, CancellationToken ct = default)
     {
         return await _context.Categories
