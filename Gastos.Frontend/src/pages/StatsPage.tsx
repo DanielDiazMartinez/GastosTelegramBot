@@ -38,8 +38,10 @@ export const StatsPage = () => {
           <h2 className="text-2xl font-black text-slate-800">Resumen Anual {selectedYear}</h2>
           <p className="text-slate-500">Distribución total de gastos este año</p>
         </div>
-        <CategoryPieChart data={yearData} title="Gastos del Año" />
-        <IncomeExpenseChart data={comparisonData} />
+        <div className="space-y-8">
+          <CategoryPieChart data={yearData} title="Gastos del Año" />
+          <IncomeExpenseChart data={comparisonData} />
+        </div>
       </section>
 
       <hr className="border-slate-200" />
@@ -65,7 +67,6 @@ export const StatsPage = () => {
         
         <div className="space-y-8">
           <CategoryPieChart data={monthData} title={`Gastos de ${selectedMonth}`} />
-
         </div>
       </section>
 
