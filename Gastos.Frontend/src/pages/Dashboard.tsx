@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { API_STATS_URL } from '../config/api';
 
 export const Dashboard = () => {
   const [stats, setStats] = useState([]);
@@ -10,7 +11,9 @@ export const Dashboard = () => {
     const fetchStats = async () => {
       const start = '2024-03-01'; 
       const end = '2024-03-31';
-      const res = await axios.get(`http://localhost:8080/api/Stats/category-stats?startDate=${start}&endDate=${end}`);
+      const res = await axios.get(`${API_STATS_URL}/category-stats`, {
+        params: { startDate: start, endDate: end }
+      });
       setStats(res.data);
     };
     fetchStats();

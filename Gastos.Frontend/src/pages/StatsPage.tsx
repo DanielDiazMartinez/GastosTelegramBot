@@ -4,7 +4,7 @@ import { CategoryPieChart } from '../components/stats/CategoryPieChart';
 import { IncomeExpenseChart } from '../components/stats/IncomeExpenseChart';
 
 export const StatsPage = () => {
-  const { yearData, monthData,comparisonData, fetchStats } = useStats();
+  const { yearData, monthData, comparisonData, fetchStats } = useStats();
   
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
@@ -62,16 +62,19 @@ export const StatsPage = () => {
           </div>
         </div>
         
-        <CategoryPieChart data={monthData} title={`Gastos de ${selectedMonth}`} />
+        <div className="space-y-8">
+          <CategoryPieChart data={monthData} title={`Gastos de ${selectedMonth}`} />
+          <IncomeExpenseChart data={comparisonData} />
+        </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
        
         <CategoryPieChart data={monthData} title={`Distribución de Gastos`} />
 
 
         <IncomeExpenseChart data={comparisonData} />
-      </section>
+      </section> */}
     </div>
   );
-};
+};  
