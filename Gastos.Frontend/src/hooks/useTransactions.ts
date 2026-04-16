@@ -38,6 +38,17 @@ export const useTransactions = () => {
     }
   };
 
+  const updateTransaction = async (id: string, formData: any) => {
+    try {
+      await axios.put(`${API_URL}/${id}`, formData);
+      await loadData();
+      return true;
+    } catch (error) {
+      console.error("Error al editar:", error);
+      return false;
+    }
+  };
+
   const deleteTransaction = async (id: string) => {
     try {
       await axios.delete(`${API_URL}/${id}`);
@@ -55,6 +66,7 @@ export const useTransactions = () => {
     loading, 
     deleteTransaction, 
     createTransaction, 
+    updateTransaction,
     refresh: loadData 
   };
 };

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useTransactions } from '../hooks/useTransactions';
-import { Trash2, Plus, Calendar } from 'lucide-react';
+import { Trash2, Plus, Calendar, Pencil } from 'lucide-react';
 import { TransactionForm } from '../components/TransactionForm';
 
 export const TransactionsPage = () => {
-  const { transactions, categories, loading, deleteTransaction, createTransaction } = useTransactions();
+  const { transactions, categories, loading, deleteTransaction, createTransaction, updateTransaction } = useTransactions();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -25,10 +26,33 @@ export const TransactionsPage = () => {
   const handleCreate = async (formData: any) => {
     const created = await createTransaction(formData);
     if (created) {
+      setEditingTransaction(null);
       setIsFormOpen(false);
     } else {
       alert('No se pudo crear la transaccion');
     }
+  };
+
+  const handleEdit = (transaction: any) => {
+    setEditingTransaction(transaction);
+    setIsFormOpen(true);
+  };
+
+  const handleUpdate = async (formData: any) => {
+    if (!editingTransaction?.id) return;
+
+    const updated = await updateTransaction(editingTransaction.id, formData);
+    if (updated) {
+      setEditingTransaction(null);
+      setIsFormOpen(false);
+    } else {
+      alert('No se pudo editar la transaccion');
+    }
+  };
+
+  const handleCloseForm = () => {
+    setEditingTransaction(null);
+    setIsFormOpen(false);
   };
 
   if (loading) return <div className="p-10 text-center">Conectando con la base de datos...</div>;
@@ -38,7 +62,10 @@ export const TransactionsPage = () => {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Mis Movimientos</h1>
         <button
-          onClick={() => setIsFormOpen(true)}
+          onClick={() => {
+            setEditingTransaction(null);
+            setIsFormOpen(true);
+          }}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition"
         >
           <Plus size={20} /> Añadir Gasto
@@ -122,9 +149,14 @@ export const TransactionsPage = () => {
                   {t.type === 0 ? '-' : '+'}{t.amount.toFixed(2)}€
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <button onClick={() => deleteTransaction(t.id)} className="text-gray-400 hover:text-red-600">
+                  <div className="flex items-center justify-center gap-3">
+                    <button onClick={() => handleEdit(t)} className="text-gray-400 hover:text-blue-600" title="Editar">
+                      <Pencil size={18} />
+                    </button>
+                    <button onClick={() => deleteTransaction(t.id)} className="text-gray-400 hover:text-red-600" title="Eliminar">
                     <Trash2 size={18} />
-                  </button>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -142,8 +174,10 @@ export const TransactionsPage = () => {
       {isFormOpen && (
         <TransactionForm
           categories={categories}
-          onSave={handleCreate}
-          onClose={() => setIsFormOpen(false)}
+          onSave={editingTransaction ? handleUpdate : handleCreate}
+          onClose={handleCloseForm}
+          initialData={editingTransaction}
+          mode={editingTransaction ? 'edit' : 'create'}
         />
       )}
     </div>
