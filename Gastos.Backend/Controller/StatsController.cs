@@ -90,6 +90,24 @@ namespace Gastos.Backend.Controller
         }
 
         /// <summary>
+        /// Get years available for statistics filters
+        /// </summary>
+        [HttpGet("available-years")]
+        [ProducesResponseType(typeof(List<int>), 200)]
+        public async Task<IActionResult> GetAvailableYears(CancellationToken ct = default)
+        {
+            try
+            {
+                var years = await _repository.GetAvailableYearsAsync(ct);
+                return Ok(years);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, "Request timeout");
+            }
+        }
+
+        /// <summary>
         /// Get categories by type (Expense or Income)
         /// </summary>
         [HttpGet("categories")]

@@ -3,11 +3,41 @@ import { useStats } from '../hooks/useStats';
 import { CategoryPieChart } from '../components/stats/CategoryPieChart';
 import { IncomeExpenseChart } from '../components/stats/IncomeExpenseChart';
 
+const getCurrentLocalMonth = () => {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${now.getFullYear()}-${month}`;
+};
+
+const formatDateLocal = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const StatsPage = () => {
-  const { yearData, monthData, comparisonData, annualSummary, fetchStats } = useStats();
+  const {
+    yearData,
+    monthData,
+    comparisonData,
+    annualSummary,
+    availableYears,
+    fetchAnnualStats,
+    fetchMonthStats,
+    fetchAvailableYears
+  } = useStats();
   
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
-  const selectedYear = selectedMonth.substring(0, 4);
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentLocalMonth());
+  const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
+
+  useEffect(() => {
+    void fetchAvailableYears();
+  }, []);
+
+  useEffect(() => {
+    void fetchAnnualStats(Number(selectedYear));
+  }, [selectedYear]);
 
   useEffect(() => {
     void updateMonthData(selectedMonth);
@@ -16,12 +46,9 @@ export const StatsPage = () => {
   const updateMonthData = async (monthStr: string) => {
     const [year, month] = monthStr.split('-');
     const firstDay = `${year}-${month}-01`;
-    const lastDay = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
+    const lastDay = formatDateLocal(new Date(Number(year), Number(month), 0));
 
-    await Promise.all([
-      fetchStats(`${year}-01-01`, `${year}-12-31`, true),
-      fetchStats(firstDay, lastDay, false)
-    ]);
+    await fetchMonthStats(firstDay, lastDay);
   };
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,16 +57,36 @@ export const StatsPage = () => {
     void updateMonthData(val);
   };
 
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedYear(e.target.value);
+  };
+
   return (
     <div className="p-8 space-y-12 bg-slate-50 min-h-screen">
       
       <section>
-        <div className="mb-4">
-          <h2 className="text-2xl font-black text-slate-800">Resumen Anual {selectedYear}</h2>
-          <p className="text-slate-500">Distribución total de gastos este año</p>
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-2xl font-black text-slate-800">Resumen Anual {selectedYear}</h2>
+            <p className="text-slate-500">Distribución total de gastos del año seleccionado</p>
+          </div>
+          <div className="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+            <label className="text-sm font-bold text-slate-600 ml-2">Cambiar Año:</label>
+            <select
+              value={selectedYear}
+              onChange={handleYearChange}
+              className="outline-none bg-slate-100 rounded-lg px-3 py-1.5 text-slate-700 font-medium focus:ring-2 focus:ring-blue-500"
+            >
+              {availableYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <div className="mb-8 max-w-sm rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Tasa de ahorro</p>
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Tasa de ahorro anual</p>
           <div className="mt-2 flex items-end gap-2">
             <span className="text-4xl font-black text-emerald-600">{annualSummary.savingsRate.toFixed(2)}%</span>
           </div>

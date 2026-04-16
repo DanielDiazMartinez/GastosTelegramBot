@@ -228,6 +228,24 @@ public class TransactionRepository
         };
     }
 
+    public async Task<List<int>> GetAvailableYearsAsync(CancellationToken ct = default)
+    {
+        var years = await _context.Transactions
+            .Select(t => t.Date.Year)
+            .Distinct()
+            .OrderByDescending(year => year)
+            .ToListAsync(ct);
+
+        var currentYear = DateTime.Now.Year;
+
+        if (!years.Contains(currentYear))
+        {
+            years.Insert(0, currentYear);
+        }
+
+        return years;
+    }
+
     public async Task<List<Category>> GetCategoriesByTypeAsync(TransactionType type, CancellationToken ct = default)
     {
         return await _context.Categories
