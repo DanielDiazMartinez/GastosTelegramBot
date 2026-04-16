@@ -42,31 +42,6 @@ namespace Gastos.Backend.Controller
         }
 
         /// <summary>
-        /// Get income and expense totals within a date range
-        /// </summary>
-        [HttpGet("income-expense-balance")]
-        [ProducesResponseType(typeof(IncomeExpenseBalanceDto), 200)]
-        [ProducesResponseType(400)]
-        public async Task<IActionResult> GetIncomeExpenseBalanceByPeriod(
-            [FromQuery] DateTime startDate,
-            [FromQuery] DateTime endDate,
-            CancellationToken ct = default)
-        {
-            if (startDate > endDate)
-                return BadRequest("Start date must be before end date");
-
-            try
-            {
-                var balance = await _repository.GetIncomeExpenseBalanceByPeriodAsync(startDate, endDate, ct);
-                return Ok(balance);
-            }
-            catch (OperationCanceledException)
-            {
-                return StatusCode(408, "Request timeout");
-            }
-        }
-
-        /// <summary>
         /// Get monthly income and expense totals for a full year
         /// </summary>
         [HttpGet("income-expense-balance/yearly")]
@@ -88,65 +63,6 @@ namespace Gastos.Backend.Controller
             {
                 return StatusCode(408, "Request timeout");
             }
-        }
-
-        /// <summary>
-        /// Get weekly heatmap - expense by day of week
-        /// </summary>
-        [HttpGet("heatmap/weekly")]
-        [ProducesResponseType(typeof(List<DayOfWeekHeatMapDto>), 200)]
-        public async Task<IActionResult> GetWeeklyHeatmap()
-        {
-            var heatmap = await _repository.GetWeeklyHeatmapAsync();
-            return Ok(heatmap);
-        }
-
-        /// <summary>
-        /// Get daily heatmap - expense by day of month
-        /// </summary>
-        [HttpGet("heatmap/daily")]
-        [ProducesResponseType(typeof(List<DayOfMonthStatDto>), 200)]
-        public async Task<IActionResult> GetDailyHeatmap(
-            [FromQuery] int? month = null,
-            [FromQuery] int? year = null)
-        {
-            if (month.HasValue && (month < 1 || month > 12))
-                return BadRequest("Month must be between 1 and 12");
-
-            if (year.HasValue && year < 1900)
-                return BadRequest("Year must be valid");
-
-            var heatmap = await _repository.GetStatsByDayOfMonthAsync(month, year);
-            return Ok(heatmap);
-        }
-
-        /// <summary>
-        /// Get monthly heatmap - expense by month of year
-        /// </summary>
-        [HttpGet("heatmap/monthly")]
-        [ProducesResponseType(typeof(List<MonthOfYearHeatMap>), 200)]
-        [ProducesResponseType(400)]
-        public async Task<IActionResult> GetMonthlyHeatmap([FromQuery] int year)
-        {
-            if (year < 1900)
-                return BadRequest("Year must be valid");
-
-            var heatmap = await _repository.GetStatsByMonthOfYearAsync(year);
-            return Ok(heatmap);
-        }
-
-        /// <summary>
-        /// Get top expense categories (leaks) comparing current month with last month
-        /// </summary>
-        [HttpGet("top-leaks")]
-        [ProducesResponseType(typeof(List<LeakRankingDto>), 200)]
-        public async Task<IActionResult> GetTopLeaks([FromQuery] int count = 3)
-        {
-            if (count < 1 || count > 50)
-                return BadRequest("Count must be between 1 and 50");
-
-            var leaks = await _repository.GetTopLeaksAsync(count);
-            return Ok(leaks);
         }
 
         /// <summary>
@@ -173,6 +89,6 @@ namespace Gastos.Backend.Controller
             }
         }
 
-       
+
     }
 }
