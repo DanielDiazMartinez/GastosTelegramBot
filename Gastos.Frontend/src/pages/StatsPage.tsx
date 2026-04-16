@@ -43,7 +43,6 @@ export const StatsPage = () => {
           <div className="mt-2 flex items-end gap-2">
             <span className="text-4xl font-black text-emerald-600">{annualSummary.savingsRate.toFixed(2)}%</span>
           </div>
-          <p className="mt-2 text-sm text-slate-500">Porcentaje de ingresos retenido durante el año seleccionado.</p>
         </div>
         <div className="space-y-8">
           <CategoryPieChart data={yearData} title="Gastos del Año" />
