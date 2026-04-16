@@ -67,6 +67,30 @@ namespace Gastos.Backend.Controller
         }
 
         /// <summary>
+        /// Get monthly income and expense totals for a full year
+        /// </summary>
+        [HttpGet("income-expense-balance/yearly")]
+        [ProducesResponseType(typeof(List<IncomeExpenseBalanceDto>), 200)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> GetYearlyIncomeExpenseBalance(
+            [FromQuery] int year,
+            CancellationToken ct = default)
+        {
+            if (year < 1900)
+                return BadRequest("Year must be valid");
+
+            try
+            {
+                var balance = await _repository.GetMonthlyIncomeExpenseBalanceByYearAsync(year, ct);
+                return Ok(balance);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, "Request timeout");
+            }
+        }
+
+        /// <summary>
         /// Get weekly heatmap - expense by day of week
         /// </summary>
         [HttpGet("heatmap/weekly")]

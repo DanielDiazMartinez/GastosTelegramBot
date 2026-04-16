@@ -21,21 +21,21 @@ export const useStats = () => {
 
       if (isFullYear) {
         setYearData(stats);
-      } else {
-        setMonthData(stats);
-
-        const balanceRes = await axios.get(`${API_URL}/income-expense-balance`, {
-          params: { startDate, endDate }
+        const year = Number(startDate.substring(0, 4));
+        const balanceRes = await axios.get(`${API_URL}/income-expense-balance/yearly`, {
+          params: { year }
         });
 
-        const balance = balanceRes.data;
-        setComparisonData([
-          {
-            name: balance.name ?? startDate.substring(0, 7),
-            ingresos: Number(balance.ingresos ?? 0),
-            gastos: Number(balance.gastos ?? 0)
-          }
-        ]);
+        const yearlyBalance = Array.isArray(balanceRes.data) ? balanceRes.data : [];
+        setComparisonData(
+          yearlyBalance.map((item: any) => ({
+            name: item.name ?? '',
+            ingresos: Number(item.ingresos ?? 0),
+            gastos: Number(item.gastos ?? 0)
+          }))
+        );
+      } else {
+        setMonthData(stats);
       }
     } catch (error) {
       console.error("Error al obtener estadísticas:", error);

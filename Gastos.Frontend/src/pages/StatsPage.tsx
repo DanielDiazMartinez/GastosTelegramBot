@@ -7,27 +7,27 @@ export const StatsPage = () => {
   const { yearData, monthData, comparisonData, fetchStats } = useStats();
   
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const selectedYear = selectedMonth.substring(0, 4);
 
   useEffect(() => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    
-    fetchStats(`${currentYear}-01-01`, `${currentYear}-12-31`, true);
-    
-    updateMonthData(selectedMonth);
+    void updateMonthData(selectedMonth);
   }, []);
 
-  const updateMonthData = (monthStr: string) => {
+  const updateMonthData = async (monthStr: string) => {
     const [year, month] = monthStr.split('-');
     const firstDay = `${year}-${month}-01`;
     const lastDay = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
-    fetchStats(firstDay, lastDay, false);
+
+    await Promise.all([
+      fetchStats(`${year}-01-01`, `${year}-12-31`, true),
+      fetchStats(firstDay, lastDay, false)
+    ]);
   };
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSelectedMonth(val);
-    updateMonthData(val);
+    void updateMonthData(val);
   };
 
   return (
@@ -35,7 +35,7 @@ export const StatsPage = () => {
       {/* SECCIÓN ANUAL */}
       <section>
         <div className="mb-4">
-          <h2 className="text-2xl font-black text-slate-800">Resumen Anual {new Date().getFullYear()}</h2>
+          <h2 className="text-2xl font-black text-slate-800">Resumen Anual {selectedYear}</h2>
           <p className="text-slate-500">Distribución total de gastos este año</p>
         </div>
         <CategoryPieChart data={yearData} title="Gastos del Año" />

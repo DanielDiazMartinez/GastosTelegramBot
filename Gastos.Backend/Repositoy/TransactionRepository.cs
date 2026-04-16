@@ -3,6 +3,7 @@ using Gastos.Backend.Dtos;
 using Gastos.Backend.Helpers;
 using Gastos.Backend.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 
 public class TransactionRepository
@@ -181,6 +182,42 @@ public class TransactionRepository
             Ingresos = totals?.Ingresos ?? 0,
             Gastos = totals?.Gastos ?? 0
         };
+    }
+
+    public async Task<List<IncomeExpenseBalanceDto>> GetMonthlyIncomeExpenseBalanceByYearAsync(
+        int year,
+        CancellationToken ct = default)
+    {
+        var start = new DateTime(year, 1, 1).ToUtc();
+        var endOfYear = new DateTime(year, 12, 31).ToUtc().AddDays(1).AddTicks(-1);
+
+        var monthlyTotals = await _context.Transactions
+            .Where(t => t.Date >= start && t.Date <= endOfYear)
+            .GroupBy(t => t.Date.Month)
+            .Select(g => new
+            {
+                Month = g.Key,
+                Ingresos = g.Where(t => t.Type == TransactionType.Income).Sum(t => t.Amount),
+                Gastos = g.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount)
+            })
+            .ToListAsync(ct);
+
+        var monthlyTotalsByMonth = monthlyTotals.ToDictionary(x => x.Month);
+        var culture = CultureInfo.GetCultureInfo("es-ES");
+
+        return Enumerable.Range(1, 12)
+            .Select(month =>
+            {
+                monthlyTotalsByMonth.TryGetValue(month, out var totals);
+
+                return new IncomeExpenseBalanceDto
+                {
+                    Name = new DateTime(year, month, 1).ToString("MMM", culture).Replace(".", string.Empty),
+                    Ingresos = totals?.Ingresos ?? 0,
+                    Gastos = totals?.Gastos ?? 0
+                };
+            })
+            .ToList();
     }
 
     public async Task<List<Category>> GetCategoriesByTypeAsync(TransactionType type, CancellationToken ct = default)
