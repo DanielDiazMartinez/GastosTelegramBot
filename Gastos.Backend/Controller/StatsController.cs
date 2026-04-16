@@ -42,6 +42,31 @@ namespace Gastos.Backend.Controller
         }
 
         /// <summary>
+        /// Get income and expense totals within a date range
+        /// </summary>
+        [HttpGet("income-expense-balance")]
+        [ProducesResponseType(typeof(IncomeExpenseBalanceDto), 200)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> GetIncomeExpenseBalanceByPeriod(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            CancellationToken ct = default)
+        {
+            if (startDate > endDate)
+                return BadRequest("Start date must be before end date");
+
+            try
+            {
+                var balance = await _repository.GetIncomeExpenseBalanceByPeriodAsync(startDate, endDate, ct);
+                return Ok(balance);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, "Request timeout");
+            }
+        }
+
+        /// <summary>
         /// Get weekly heatmap - expense by day of week
         /// </summary>
         [HttpGet("heatmap/weekly")]

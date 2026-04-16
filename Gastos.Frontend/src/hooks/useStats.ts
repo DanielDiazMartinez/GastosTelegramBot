@@ -17,27 +17,26 @@ export const useStats = () => {
         params: { startDate, endDate }
       });
 
-const stats = res.data;
+      const stats = res.data;
 
-if (!isFullYear) {
-  setMonthData(stats);
-  
-  const totalGastos = stats
-    .filter((s: any) => Number(s.type ?? s.Type) === 0)
-    .reduce((acc: number, curr: any) => acc + (curr.totalAmount ?? curr.TotalAmount ?? 0), 0);
+      if (isFullYear) {
+        setYearData(stats);
+      } else {
+        setMonthData(stats);
 
-  const totalIngresos = stats
-    .filter((s: any) => Number(s.type ?? s.Type) === 1)
-    .reduce((acc: number, curr: any) => acc + (curr.totalAmount ?? curr.TotalAmount ?? 0), 0);
+        const balanceRes = await axios.get(`${API_URL}/income-expense-balance`, {
+          params: { startDate, endDate }
+        });
 
-  console.log("Totales calculados:", { totalIngresos, totalGastos });
-
-  setComparisonData([{
-    name: startDate.substring(0, 7),
-    ingresos: totalIngresos,
-    gastos: totalGastos
-  }]);
-}
+        const balance = balanceRes.data;
+        setComparisonData([
+          {
+            name: balance.name ?? startDate.substring(0, 7),
+            ingresos: Number(balance.ingresos ?? 0),
+            gastos: Number(balance.gastos ?? 0)
+          }
+        ]);
+      }
     } catch (error) {
       console.error("Error al obtener estadísticas:", error);
     } finally {

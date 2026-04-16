@@ -157,6 +157,32 @@ public class TransactionRepository
         .ToList();
     }
 
+    public async Task<IncomeExpenseBalanceDto> GetIncomeExpenseBalanceByPeriodAsync(
+        DateTime startDate,
+        DateTime endDate,
+        CancellationToken ct = default)
+    {
+        var start = startDate.ToUtc();
+        var endOfPeriod = endDate.ToUtc().AddDays(1).AddTicks(-1);
+
+        var totals = await _context.Transactions
+            .Where(t => t.Date >= start && t.Date <= endOfPeriod)
+            .GroupBy(t => 1)
+            .Select(g => new
+            {
+                Ingresos = g.Where(t => t.Type == TransactionType.Income).Sum(t => t.Amount),
+                Gastos = g.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount)
+            })
+            .FirstOrDefaultAsync(ct);
+
+        return new IncomeExpenseBalanceDto
+        {
+            Name = startDate.ToString("yyyy-MM"),
+            Ingresos = totals?.Ingresos ?? 0,
+            Gastos = totals?.Gastos ?? 0
+        };
+    }
+
     public async Task<List<Category>> GetCategoriesByTypeAsync(TransactionType type, CancellationToken ct = default)
     {
         return await _context.Categories
