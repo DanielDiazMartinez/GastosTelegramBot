@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, ReceiptText, TrendingUp, Wallet } from 'lucide-react';
+import { ReceiptText, TrendingUp, Wallet } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,7 +9,6 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children, activePage, setActivePage }) => {
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { id: 'transactions', label: 'Transacciones', icon: <ReceiptText size={20} /> },
     { id: 'stats', label: 'Estadísticas', icon: <TrendingUp size={20} /> },
   ];
