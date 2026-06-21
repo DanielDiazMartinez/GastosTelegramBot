@@ -1,3 +1,5 @@
+using Gastos.Backend.Models;
+
 namespace Gastos.Backend.Models;
 
 public enum TransactionType
@@ -14,6 +16,7 @@ public class Transaction
     public decimal Amount { get; set; }
     public string? Description { get; set; }
     public DateTime Date { get; set; } = DateTime.UtcNow;
+    public TransactionStatus Status { get; set; } = TransactionStatus.Approved;
 
     public Category Category { get; set; } = null!;
     public HarvestDetail? HarvestDetail { get; set; }

@@ -101,6 +101,39 @@ namespace Gastos.Backend.Controller
         }
 
         /// <summary>
+        /// Triage a new transaction
+        /// </summary>
+        [HttpPost("triage")]
+        [ProducesResponseType(typeof(TransactionDto), 201)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> TriageTransaction([FromBody] TriageTransactionDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (!Enum.IsDefined(typeof(TransactionType), dto.Type))
+                return BadRequest("Invalid transaction type");
+
+            var transaction = new Transaction
+            {
+                Id = Guid.NewGuid(),
+                Amount = dto.Amount,
+                Type = (TransactionType)dto.Type,
+                CategoryId = dto.CategoryId,
+                Description = dto.Description,
+                Date = dto.Date?.ToUtc() ?? DateTime.UtcNow,
+                Status = TransactionStatus.PendingTriage
+            };
+
+            var createdTransaction = await _repository.CreateTriageTransactionAsync(transaction);
+
+            if (createdTransaction == null)
+                return BadRequest("Category not found or invalid data");
+
+            return CreatedAtAction(nameof(GetTransactionById), new { id = createdTransaction.Id }, MapToDto(createdTransaction));
+        }
+
+        /// <summary>
         /// Update an existing transaction
         /// </summary>
         [HttpPut("{id}")]

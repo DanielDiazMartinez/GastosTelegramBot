@@ -122,6 +122,18 @@ public class TransactionRepository
         return await _context.SaveChangesAsync() > 0;
     }
 
+    public async Task<Transaction?> CreateTriageTransactionAsync(Transaction transaction)
+    {
+        var category = await _context.Categories
+            .FirstOrDefaultAsync(c => c.Id == transaction.CategoryId);
+
+        if (category == null) return null;
+
+        _context.Transactions.Add(transaction);
+        await _context.SaveChangesAsync();
+        return transaction;
+    }
+
     public async Task<List<CategoryStatDto>> GetCategoryStatsByPeriodAsync(
     DateTime startDate,
     DateTime endDate,

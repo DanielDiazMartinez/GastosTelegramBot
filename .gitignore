@@ -34,6 +34,9 @@ publish/
 packages/
 artifacts/
 
+# Python
+__pycache__/
+
 *.db
 *.sqlite
 *.sqlite3
