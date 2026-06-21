@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS public."Transactions"
     "Amount" numeric(12,2) NOT NULL,
     "Description" text COLLATE pg_catalog."default",
     "Date" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "Status" integer NOT NULL DEFAULT 0,
     CONSTRAINT "Transactions_pkey" PRIMARY KEY ("Id"),
     CONSTRAINT "FK_Transactions_Categories_CategoryId" FOREIGN KEY ("CategoryId")
         REFERENCES public."Categories" ("Id") MATCH SIMPLE
