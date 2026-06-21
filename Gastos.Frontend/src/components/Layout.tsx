@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { ReceiptText, TrendingUp, Wallet, ClipboardList } from 'lucide-react';
 
 interface LayoutProps {

@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
+import { useState, useEffect } from 'react';
 import { useTriageTransactions } from '../hooks/useTriageTransactions';
 
 interface Transaction {
@@ -71,11 +70,11 @@ const TriagePage: React.FC = () => {
     }
   };
 
-  if (loading) return <Layout><p>Cargando transacciones de triaje...</p></Layout>;
-  if (error) return <Layout><p className="text-red-500">Error: {error}</p></Layout>;
+  if (loading) return <p>Cargando transacciones de triaje...</p>;
+  if (error) return <p className="text-red-500">Error: {error}</p>;
 
   return (
-    <Layout>
+    <>
       <h1 className="text-2xl font-bold mb-4">Transacciones Pendientes de Triaje</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -185,7 +184,7 @@ const TriagePage: React.FC = () => {
           </div>
         )}
       </div>
-    </Layout>
+    </>
   );
 };
 
