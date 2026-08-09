@@ -13,4 +13,3 @@ const fallbackApiBaseUrl = `http://${runtimeHost}:8080/api`;
 export const API_BASE_URL = envApiBaseUrl || fallbackApiBaseUrl;
 export const API_STATS_URL = `${API_BASE_URL}/Stats`;
 export const API_TRANSACTION_URL = `${API_BASE_URL}/Transaction`;
-export const API_TRIAGE_TRANSACTION_URL = `${API_TRANSACTION_URL}/pending-triage`;

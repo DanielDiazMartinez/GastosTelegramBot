@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { ReceiptText, TrendingUp, Wallet, ClipboardList } from 'lucide-react';
+import React from 'react';
+import { ReceiptText, TrendingUp, Wallet } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,7 +11,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, setActiveP
   const menuItems = [
     { id: 'transactions', label: 'Transacciones', icon: <ReceiptText size={20} /> },
     { id: 'stats', label: 'Estadísticas', icon: <TrendingUp size={20} /> },
-    { id: 'triage', label: 'Triaje', icon: <ClipboardList size={20} /> },
   ];
 
   return (

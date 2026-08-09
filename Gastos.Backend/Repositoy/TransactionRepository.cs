@@ -45,16 +45,6 @@ public class TransactionRepository
     {
         return await _context.Transactions
             .Include(t => t.Category)
-            .Where(t => t.Status != TransactionStatus.PendingTriage)
-            .OrderByDescending(t => t.Date)
-            .ToListAsync();
-    }
-
-    public async Task<List<Transaction>> GetPendingTriageTransactionsAsync()
-    {
-        return await _context.Transactions
-            .Include(t => t.Category)
-            .Where(t => t.Status == TransactionStatus.PendingTriage)
             .OrderByDescending(t => t.Date)
             .ToListAsync();
     }
@@ -132,29 +122,180 @@ public class TransactionRepository
         return await _context.SaveChangesAsync() > 0;
     }
 
-
-    public async Task<bool> ConfirmTriageTransactionAsync(Guid id, ConfirmTriageTransactionDto dto)
+    public async Task<Transaction?> CreateTriageTransactionAsync(Transaction transaction)
     {
-        var transaction = await _context.Transactions.FirstOrDefaultAsync(t => t.Id == id);
-        if (transaction == null) return false;
+        var category = await _context.Categories
+            .FirstOrDefaultAsync(c => c.Id == transaction.CategoryId);
 
-        if (transaction.Status != TransactionStatus.PendingTriage) return false; // Only confirm pending triage transactions
+        if (category == null) return null;
 
-        var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == dto.CategoryId);
-        if (category == null) return false;
+        _context.Transactions.Add(transaction);
+        await _context.SaveChangesAsync();
+        return transaction;
+    }
 
-        transaction.Amount = dto.Amount;
-        transaction.Type = (TransactionType)dto.Type;
-        transaction.CategoryId = dto.CategoryId;
-        transaction.Description = dto.Description;
-        transaction.Status = TransactionStatus.Approved;
+    public async Task<List<CategoryStatDto>> GetCategoryStatsByPeriodAsync(
+    DateTime startDate,
+    DateTime endDate,
+    CancellationToken ct = default)
+    {
+        var start = startDate.ToUtc();
+        var endOfPeriod = endDate.ToUtc().AddDays(1).AddTicks(-1);
 
-        if (dto.Date.HasValue)
+        var categoryData = await _context.Transactions
+            .Include(t => t.Category)
+            .Where(t => t.Type == TransactionType.Expense &&
+                        t.Date >= start &&
+                        t.Date <= endOfPeriod)
+            .GroupBy(t => t.Category.Name)
+            .Select(g => new
+            {
+                Name = g.Key,
+                Amount = g.Sum(t => t.Amount)
+            })
+            .ToListAsync(ct);
+
+        decimal totalPeriodAmount = categoryData.Sum(x => x.Amount);
+
+        return categoryData.Select(x => new CategoryStatDto
         {
-            transaction.Date = dto.Date.Value.ToUtc();
+            CategoryName = x.Name,
+            TotalAmount = x.Amount,
+            Percentage = totalPeriodAmount > 0
+                ? (double)((x.Amount / totalPeriodAmount) * 100)
+                : 0,
+            Color = GetColorForCategory(x.Name)
+        })
+        .OrderByDescending(x => x.TotalAmount)
+        .ToList();
+    }
+
+    public async Task<List<IncomeExpenseBalanceDto>> GetMonthlyIncomeExpenseBalanceByYearAsync(
+        int year,
+        CancellationToken ct = default)
+    {
+        var start = new DateTime(year, 1, 1).ToUtc();
+        var endOfYear = new DateTime(year, 12, 31).ToUtc().AddDays(1).AddTicks(-1);
+
+        var monthlyTotals = await _context.Transactions
+            .Where(t => t.Date >= start && t.Date <= endOfYear)
+            .GroupBy(t => t.Date.Month)
+            .Select(g => new
+            {
+                Month = g.Key,
+                Ingresos = g.Where(t => t.Type == TransactionType.Income).Sum(t => t.Amount),
+                Gastos = g.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount)
+            })
+            .ToListAsync(ct);
+
+        var monthlyTotalsByMonth = monthlyTotals.ToDictionary(x => x.Month);
+        var culture = CultureInfo.GetCultureInfo("es-ES");
+
+        return Enumerable.Range(1, 12)
+            .Select(month =>
+            {
+                monthlyTotalsByMonth.TryGetValue(month, out var totals);
+
+                return new IncomeExpenseBalanceDto
+                {
+                    Name = new DateTime(year, month, 1).ToString("MMM", culture).Replace(".", string.Empty),
+                    Ingresos = totals?.Ingresos ?? 0,
+                    Gastos = totals?.Gastos ?? 0
+                };
+            })
+            .ToList();
+    }
+
+    public async Task<FinanceSummaryDto> GetFinanceSummaryByYearAsync(
+        int year,
+        CancellationToken ct = default)
+    {
+        var start = new DateTime(year, 1, 1).ToUtc();
+        var endOfYear = new DateTime(year, 12, 31).ToUtc().AddDays(1).AddTicks(-1);
+
+        var totals = await _context.Transactions
+            .Where(t => t.Date >= start && t.Date <= endOfYear)
+            .GroupBy(t => 1)
+            .Select(g => new
+            {
+                TotalIngresos = g.Where(t => t.Type == TransactionType.Income).Sum(t => t.Amount),
+                TotalGastos = g.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount),
+                TransactionsCount = g.Count()
+            })
+            .FirstOrDefaultAsync(ct);
+
+        var totalIngresos = totals?.TotalIngresos ?? 0;
+        var totalGastos = totals?.TotalGastos ?? 0;
+        var balanceTotal = totalIngresos - totalGastos;
+        var savingsRate = totalIngresos > 0
+            ? Math.Round((balanceTotal / totalIngresos) * 100, 2)
+            : 0;
+
+        return new FinanceSummaryDto
+        {
+            BalanceTotal = balanceTotal,
+            MonthlyBudgetUsage = 0,
+            SavingsRate = savingsRate,
+            TransactionsCount = totals?.TransactionsCount ?? 0
+        };
+    }
+
+    public async Task<List<int>> GetAvailableYearsAsync(CancellationToken ct = default)
+    {
+        var years = await _context.Transactions
+            .Select(t => t.Date.Year)
+            .Distinct()
+            .OrderByDescending(year => year)
+            .ToListAsync(ct);
+
+        var currentYear = DateTime.Now.Year;
+
+        if (!years.Contains(currentYear))
+        {
+            years.Insert(0, currentYear);
         }
 
-        _context.Transactions.Update(transaction);
-        return await _context.SaveChangesAsync() > 0;
+        return years;
     }
+
+    public async Task<List<Category>> GetCategoriesByTypeAsync(TransactionType type, CancellationToken ct = default)
+    {
+        return await _context.Categories
+            .Where(c => c.Type == type)
+            .ToListAsync(ct);
+    }
+
+    private string GetColorForCategory(string categoryName)
+    {
+        return categoryName.ToLower() switch
+        {
+            "comida" => "#FF6384",
+            "comidafuera" => "#FF9AA2",
+            "comidadomicilio" => "#FFB7B2",
+
+            "gasolina" => "#36A2EB",
+            "transporte" => "#4D96FF",
+
+            "ropa" => "#8AC926",
+            "regalos" => "#C77DFF",
+
+            "alquiler" => "#4BC0C0",
+            "gastoshogar" => "#2EC4B6",
+            "telefono" => "#5E60CE",
+
+            "salud/ejercicio" => "#FF595E",
+
+            "dineroprestado" => "#6A4C93",
+            "inversion" => "#1982C4",
+            "educacion" => "#FF9F40",
+
+            "nomina" => "#2ECC71",   
+            "familia" => "#52B788",   
+
+            "otros" => "#ADB5BD",
+
+            _ => "#C9CBCF"
+        };
+    }
+
 }

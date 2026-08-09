@@ -1,5 +1,5 @@
-﻿using Gastos.Backend.Dtos;
-using Gastos.Backend.Helpers;
+﻿using Gastos.Backend.Data;
+using Gastos.Backend.Dtos;
 using Gastos.Backend.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,25 +17,13 @@ namespace Gastos.Backend.Controller
         }
 
         /// <summary>
-        /// Get all transactions not in PendingTriage status
+        /// Get all transactions
         /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(List<TransactionDto>), 200)]
         public async Task<IActionResult> GetAllTransactions()   
         {
             var transactions = await _repository.GetAllTransactionsAsync();
-            var dtos = transactions.Select(t => MapToDto(t)).ToList();
-            return Ok(dtos);
-        }
-
-        /// <summary>
-        /// Get all pending triage transactions
-        /// </summary>
-        [HttpGet("pending-triage")]
-        [ProducesResponseType(typeof(List<TransactionDto>), 200)]
-        public async Task<IActionResult> GetPendingTriageTransactions()
-        {
-            var transactions = await _repository.GetPendingTriageTransactionsAsync();
             var dtos = transactions.Select(t => MapToDto(t)).ToList();
             return Ok(dtos);
         }
@@ -146,30 +134,6 @@ namespace Gastos.Backend.Controller
         }
 
         /// <summary>
-        /// Confirm a pending triage transaction, optionally updating its details.
-        /// </summary>
-        [HttpPut("confirm-triage/{id}")]
-        [ProducesResponseType(typeof(TransactionDto), 200)]
-        [ProducesResponseType(404)]
-        [ProducesResponseType(400)]
-        public async Task<IActionResult> ConfirmTriageTransaction(Guid id, [FromBody] ConfirmTriageTransactionDto dto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            if (!Enum.IsDefined(typeof(TransactionType), dto.Type))
-                return BadRequest("Invalid transaction type");
-
-            var success = await _repository.ConfirmTriageTransactionAsync(id, dto);
-
-            if (!success)
-                return NotFound("Transaction not found, not pending triage, or invalid category.");
-
-            var transaction = await _repository.GetTransactionByIdAsync(id);
-            return Ok(MapToDto(transaction!));
-        }
-
-        /// <summary>
         /// Update an existing transaction
         /// </summary>
         [HttpPut("{id}")]
@@ -224,8 +188,7 @@ namespace Gastos.Backend.Controller
                 Type = (int)transaction.Type,
                 Amount = transaction.Amount,
                 Description = transaction.Description,
-                Date = transaction.Date,
-                Status = transaction.Status.ToString()
+                Date = transaction.Date
             };
         }
     }
